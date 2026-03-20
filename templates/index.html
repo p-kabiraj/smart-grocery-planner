@@ -1,0 +1,173 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartGrocer & PriceWise</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css'%}">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+<div class="app-container">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">🛒 SmartGrocer</div>
+        <nav>
+            <ul id="main-nav">
+                <li class="nav-item active" data-target="dashboard-sec">Dashboard</li>
+                <li class="nav-item" data-target="list-sec">Grocery List</li>
+                <li class="nav-item" data-target="compare-sec">Price Comparison</li>
+                <li class="nav-item" data-target="expense-sec">Expense Tracker</li>
+                <li class="nav-item" data-target="budget-sec">Budgeting</li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main -->
+    <main class="content-area">
+
+        <!-- DASHBOARD -->
+        <section id="dashboard-sec" class="page-section active">
+            <header>
+                <h1>Welcome to PriceWise!</h1>
+                <p>Smart shopping decision system 🚀</p>
+            </header>
+
+            <div class="stats-grid">
+                <div class="stat-card"><span>Total Budget</span><h3>₹5000</h3></div>
+                <div class="stat-card"><span>Spent</span><h3>₹3200</h3></div>
+                <div class="stat-card savings"><span>Savings</span><h3>₹800</h3></div>
+            </div>
+
+            <div class="dashboard-main-grid">
+                <div class="card wide">
+                    <h3>Weekly Spending</h3>
+                    <canvas id="spendingChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- GROCERY LIST -->
+        <section id="list-sec" class="page-section">
+            <header><h1>Grocery List</h1></header>
+
+            <div class="card">
+                <div class="input-row">
+                    <input type="text" id="itemInput" placeholder="Add item...">
+                    <button onclick="addItem()">Add</button>
+                </div>
+
+                <ul id="grocery-list-items">
+                    <li>Milk</li>
+                    <li>Bread</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 🔥 PRICE COMPARISON (IMPORTANT PART) -->
+        <section id="compare-sec" class="page-section">
+            <header><h1>Price Comparison</h1></header>
+
+            <div class="card">
+
+                <!-- ✅ Django Search Form -->
+                <form method="GET" action="/search/">
+                    <div class="input-row">
+                        <input type="text" name="q" placeholder="Search product..." value="{{ query }}" required>
+                        <button type="submit">Compare</button>
+                    </div>
+                </form>
+
+                <!-- RESULTS -->
+                <div class="results-container">
+
+                    {% if query and not prices %}
+                        <div class="no-results">
+                            <p>❌ No results found for "<strong>{{ query }}</strong>"</p>
+                            <p style="font-size: 0.9rem; color: #888;">Try searching for: Milk, Bread, Butter, Eggs, Cheese, Yogurt, Rice, Dal, Oil, Sugar, Coffee, Tea, Tomato, Onion, Potato</p>
+                        </div>
+                    {% elif prices %}
+                        <div class="comparison-header">
+                            <h2>💰 Price Comparison for: <strong>{{ prices.0.product.name }}</strong></h2>
+                            <p style="color: #888; margin: 0;">Comparing prices across {{ prices|length }} platform(s)</p>
+                        </div>
+
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>🏪 Platform</th>
+                                    <th>💵 Price</th>
+                                    <th>🔗 Link</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% with min_price=prices|dictsort:"price"|first%}
+                                    {% for p in prices|dictsort:"price" %}
+                                    <tr {% if p.price == min_price.price %}class="cheapest-row"{% endif %}>
+                                        <td>
+                                            <strong>{{ p.platform.name }}</strong>
+                                            {% if p.price == min_price.price %}<span class="badge-cheapest">✓ CHEAPEST</span>{% endif %}
+                                        </td>
+                                        <td class="price-cell">
+                                            <span class="price">₹{{ p.price }}</span>
+                                        </td>
+                                        <td>
+                                            <a href="{{ p.platform.link }}" target="_blank" class="view-link">Visit →</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endwith %}
+                            </tbody>
+                        </table>
+
+                        {% with min_price=prices|dictsort:"price"|first %}
+                        <div class="savings-info">
+                            <p>💡 Save money by shopping at <strong>{{ min_price.platform.name }}</strong> (₹{{ min_price.price }})</p>
+                        </div>
+                        {% endwith %}
+
+                    {% else %}
+                        <div class="welcome-compare">
+                            <p>👉 Enter a product name and click <strong>Compare</strong> to see prices across all platforms</p>
+                            <p style="font-size: 0.9rem; color: #888; margin-top: 10px;">Available products: Milk, Bread, Butter, Eggs, Cheese, Yogurt, Rice, Dal, Oil, Sugar, Coffee, Tea, Tomato, Onion, Potato</p>
+                        </div>
+                    {% endif %}
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- EXPENSE -->
+        <section id="expense-sec" class="page-section">
+            <header><h1>Expense Tracker</h1></header>
+
+            <div class="card">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </section>
+
+        <!-- BUDGET -->
+        <section id="budget-sec" class="page-section">
+            <header><h1>Budget Optimization</h1></header>
+
+            <div class="card">
+                <p>Switching to cheaper brands can save money 💡</p>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<!-- JS -->
+<script src="{% static 'js/script.js'%}"></script>
+
+</body>
+</html>
