@@ -1,4 +1,4 @@
-# Smart Grocery Planner
+# Smart Grocery Planner!
 
 A Django-based web application that helps users compare grocery prices across multiple online platforms to find the best deals and save money on their shopping.
 
